@@ -1,4 +1,9 @@
 import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/Components/ui/collapsible";
+import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -9,6 +14,9 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
     SidebarRail,
 } from "@/Components/ui/sidebar";
 import {
@@ -19,7 +27,19 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
 import { Link, usePage } from "@inertiajs/react";
-import { Home, User, LogOut, ChevronUp } from "lucide-react";
+import {
+    Home,
+    User,
+    LogOut,
+    ChevronUp,
+    Database,
+    ChevronRight,
+    Pill,
+    Stethoscope,
+    ClipboardList,
+    Users,
+    FileText,
+} from "lucide-react";
 import ApplicationLogo from "@/Components/ApplicationLogo";
 
 export function AppSidebar() {
@@ -37,7 +57,7 @@ export function AppSidebar() {
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
                                     <span className="font-semibold">
-                                        Laravel App
+                                        SIM Klinik PPA BIB
                                     </span>
                                     <span className="">v1.0.0</span>
                                 </div>
@@ -59,6 +79,208 @@ export function AppSidebar() {
                                     <Link href={route("dashboard")}>
                                         <Home />
                                         <span>Dashboard</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <Collapsible
+                                asChild
+                                defaultOpen={route().current("kunjungan.*")}
+                                className="group/collapsible"
+                            >
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton tooltip="Kunjungan">
+                                            <Stethoscope />
+                                            <span>Kunjungan</span>
+                                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "kunjungan.berobat.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "kunjungan.berobat.index"
+                                                        )}
+                                                    >
+                                                        <span>Berobat</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "kunjungan.follow-up-mcu.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "kunjungan.follow-up-mcu.index"
+                                                        )}
+                                                    >
+                                                        <span>
+                                                            Follow Up MCU
+                                                        </span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "kunjungan.prolanis.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "kunjungan.prolanis.index"
+                                                        )}
+                                                    >
+                                                        <span>Prolanis</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
+                            <Collapsible
+                                asChild
+                                defaultOpen={route().current("master.*")}
+                                className="group/collapsible"
+                            >
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton tooltip="Master Data">
+                                            <Database />
+                                            <span>Master Data</span>
+                                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "master.perusahaan.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "master.perusahaan.index"
+                                                        )}
+                                                    >
+                                                        <span>Perusahaan</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "master.departemen.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "master.departemen.index"
+                                                        )}
+                                                    >
+                                                        <span>Departemen</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "master.jabatan.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "master.jabatan.index"
+                                                        )}
+                                                    >
+                                                        <span>Jabatan</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={route().current(
+                                                        "master.karyawan.index"
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={route(
+                                                            "master.karyawan.index"
+                                                        )}
+                                                    >
+                                                        <span>Karyawan</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={route().current(
+                                        "rekam-medis.index"
+                                    )}
+                                >
+                                    <Link href={route("rekam-medis.index")}>
+                                        <ClipboardList />
+                                        <span>Rekam Medis</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={route().current("obat.index")}
+                                >
+                                    <Link href={route("obat.index")}>
+                                        <Pill />
+                                        <span>Obat & BMHP</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={route().current(
+                                        "user-management.index"
+                                    )}
+                                >
+                                    <Link href={route("user-management.index")}>
+                                        <Users />
+                                        <span>User Management</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={route().current(
+                                        "master.icd10.index"
+                                    )}
+                                >
+                                    <Link href={route("master.icd10.index")}>
+                                        <FileText />
+                                        <span>Diagnosa ICD 10</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
