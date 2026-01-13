@@ -13,6 +13,8 @@ import {
     Briefcase,
     Users,
     Cake,
+    Plus,
+    Pencil,
 } from "lucide-react";
 
 interface Medicine {
@@ -50,12 +52,23 @@ interface MedicalRecord {
     date: string;
 }
 
+interface EmployeeData {
+    id: number;
+    name: string;
+    company: string;
+    department: string | null;
+    position: string | null;
+    age: number;
+    gender: string;
+}
+
 interface Props {
     employee: string;
+    employeeData: EmployeeData;
     history: MedicalRecord[];
 }
 
-export default function RekamMedis({ employee, history }: Props) {
+export default function RekamMedis({ employee, employeeData, history }: Props) {
     const getStatusBadge = (status: string) => {
         const variants: {
             [key: string]: "default" | "secondary" | "destructive" | "outline";
@@ -205,10 +218,23 @@ export default function RekamMedis({ employee, history }: Props) {
 
                     {/* Medical History Timeline */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-lg">
                                 Riwayat Kunjungan
                             </h3>
+                            <Button
+                                onClick={() =>
+                                    router.visit(
+                                        route("kunjungan.berobat.create", {
+                                            employee_id: employeeData.id,
+                                        })
+                                    )
+                                }
+                                className="gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Tambah Data
+                            </Button>
                         </div>
 
                         {history.length > 0 ? (
@@ -489,14 +515,31 @@ export default function RekamMedis({ employee, history }: Props) {
                                                         </strong>
                                                     </span>
                                                 </div>
-                                                {idx === 0 && (
-                                                    <Badge
+                                                <div className="flex items-center gap-2">
+                                                    {idx === 0 && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            Kunjungan Terbaru
+                                                        </Badge>
+                                                    )}
+                                                    <Button
                                                         variant="outline"
-                                                        className="text-xs"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            router.visit(
+                                                                route(
+                                                                    "kunjungan.berobat.edit",
+                                                                    record.id
+                                                                )
+                                                            )
+                                                        }
                                                     >
-                                                        Kunjungan Terbaru
-                                                    </Badge>
-                                                )}
+                                                        <Pencil className="h-4 w-4 mr-1" />
+                                                        Edit
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>

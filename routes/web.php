@@ -78,7 +78,10 @@ Route::middleware(['auth', 'verified'])->prefix('obat')->name('obat.')->group(fu
 Route::middleware(['auth', 'verified'])->prefix('kunjungan')->name('kunjungan.')->group(function () {
     // Berobat
     Route::get('/berobat', [VisitController::class, 'index'])->name('berobat.index');
+    Route::get('/berobat/create', [VisitController::class, 'create'])->name('berobat.create');
     Route::post('/berobat', [VisitController::class, 'store'])->name('berobat.store');
+    Route::get('/berobat/{visit}/edit', [VisitController::class, 'edit'])->name('berobat.edit');
+    Route::put('/berobat/{visit}', [VisitController::class, 'update'])->name('berobat.update');
     Route::get('/berobat/rekam-medis', [VisitController::class, 'rekamMedis'])->name('berobat.rekam-medis');
 
     // Follow-up MCU

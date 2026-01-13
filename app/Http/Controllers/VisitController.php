@@ -10,6 +10,7 @@ use App\Models\Prescription;
 use App\Models\LabTest;
 use App\Models\Medicine;
 use App\Models\LabTestType;
+use App\Models\Diagnosis;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -59,6 +60,39 @@ class VisitController extends Controller
         return Inertia::render('Kunjungan/Berobat/Index', [
             'employees' => $employees,
             'search' => $search,
+        ]);
+    }
+
+    public function create(Request $request)
+    {
+        $employeeId = $request->get('employee_id');
+        $employee = null;
+
+        if ($employeeId) {
+            $employee = Employee::with(['company', 'department', 'position'])
+                ->find($employeeId);
+
+            if ($employee) {
+                $employee = [
+                    'id' => $employee->id,
+                    'employee_number' => $employee->employee_number,
+                    'name' => $employee->name,
+                    'age' => $employee->age,
+                    'gender' => $employee->gender,
+                    'company_name' => $employee->company->name,
+                    'department_name' => $employee->department?->name,
+                    'position_name' => $employee->position?->name,
+                ];
+            }
+        }
+
+        $medicines = Medicine::where('is_active', true)->orderBy('name')->get(['id', 'name', 'unit']);
+        $diagnoses = Diagnosis::where('is_active', true)->orderBy('name_id')->get(['id', 'icd10_code', 'name_id']);
+
+        return Inertia::render('Kunjungan/Berobat/Create', [
+            'employee' => $employee,
+            'medicines' => $medicines,
+            'diagnoses' => $diagnoses,
         ]);
     }
 
@@ -143,7 +177,7 @@ class VisitController extends Controller
             'visit_time' => 'required',
             'visit_type' => 'required|in:berobat,mcu,prolanis,follow_up',
             'complaint' => 'nullable|string',
-            'diagnosis' => 'nullable|string',
+            'diagnosis_id' => 'nullable|exists:diagnoses,id',
             'plan' => 'nullable|string',
             'bp_systolic' => 'nullable|integer',
             'bp_diastolic' => 'nullable|integer',
@@ -169,12 +203,19 @@ class VisitController extends Controller
             'pic_user_id' => \Illuminate\Support\Facades\Auth::id(),
         ]);
 
+        // Get diagnosis name if diagnosis_id is provided
+        $diagnosisText = null;
+        if (!empty($validated['diagnosis_id'])) {
+            $diagnosis = Diagnosis::find($validated['diagnosis_id']);
+            $diagnosisText = $diagnosis ? "{$diagnosis->icd10_code} - {$diagnosis->name_id}" : null;
+        }
+
         // Create medical record (SOAP)
-        if (!empty($validated['complaint']) || !empty($validated['diagnosis'])) {
+        if (!empty($validated['complaint']) || !empty($diagnosisText)) {
             MedicalRecord::create([
                 'visit_id' => $visit->id,
                 'subjective' => $validated['complaint'] ?? null,
-                'assessment' => $validated['diagnosis'] ?? null,
+                'assessment' => $diagnosisText,
                 'plan' => $validated['plan'] ?? null,
             ]);
         }
@@ -205,7 +246,132 @@ class VisitController extends Controller
             }
         }
 
-        return redirect()->route('kunjungan.berobat.index')
+        return redirect()->route('kunjungan.berobat.rekam-medis', ['employee_id' => $validated['employee_id']])
             ->with('success', 'Kunjungan berhasil ditambahkan');
+    }
+
+    public function edit(Visit $visit)
+    {
+        $visit->load(['employee.company', 'employee.department', 'employee.position', 'medicalRecord', 'vitalSigns', 'prescriptions']);
+
+        $employee = [
+            'id' => $visit->employee->id,
+            'employee_number' => $visit->employee->employee_number,
+            'name' => $visit->employee->name,
+            'age' => $visit->employee->age,
+            'gender' => $visit->employee->gender,
+            'company_name' => $visit->employee->company->name,
+            'department_name' => $visit->employee->department?->name,
+            'position_name' => $visit->employee->position?->name,
+        ];
+
+        $vitalSign = $visit->vitalSigns->first();
+
+        $visitData = [
+            'id' => $visit->id,
+            'visit_date' => $visit->visit_date->format('Y-m-d'),
+            'visit_time' => $visit->visit_time?->format('H:i'),
+            'visit_type' => $visit->visit_type,
+            'complaint' => $visit->medicalRecord?->subjective,
+            'diagnosis_id' => '', // Will need to match from assessment text
+            'plan' => $visit->medicalRecord?->plan,
+            'bp_systolic' => $vitalSign?->blood_pressure_systolic,
+            'bp_diastolic' => $vitalSign?->blood_pressure_diastolic,
+            'pulse' => $vitalSign?->pulse,
+            'rr' => $vitalSign?->respiratory_rate,
+            'temp' => $vitalSign?->temperature,
+            'spo2' => $vitalSign?->spo2,
+            'action_status' => $visit->action_status,
+            'medicines' => $visit->prescriptions->map(fn($p) => [
+                'medicine_id' => (string) $p->medicine_id,
+                'quantity' => $p->quantity,
+                'dosage' => $p->dosage ?? '',
+                'frequency' => $p->frequency ?? '',
+            ])->toArray(),
+        ];
+
+        $medicines = Medicine::where('is_active', true)->orderBy('name')->get(['id', 'name', 'unit']);
+        $diagnoses = Diagnosis::where('is_active', true)->orderBy('name_id')->get(['id', 'icd10_code', 'name_id']);
+
+        return Inertia::render('Kunjungan/Berobat/Edit', [
+            'employee' => $employee,
+            'visit' => $visitData,
+            'medicines' => $medicines,
+            'diagnoses' => $diagnoses,
+        ]);
+    }
+
+    public function update(Request $request, Visit $visit)
+    {
+        $validated = $request->validate([
+            'visit_date' => 'required|date',
+            'visit_time' => 'required',
+            'complaint' => 'nullable|string',
+            'diagnosis_id' => 'nullable|exists:diagnoses,id',
+            'plan' => 'nullable|string',
+            'bp_systolic' => 'nullable|integer',
+            'bp_diastolic' => 'nullable|integer',
+            'pulse' => 'nullable|integer',
+            'rr' => 'nullable|integer',
+            'temp' => 'nullable|numeric',
+            'spo2' => 'nullable|integer',
+            'medicines' => 'nullable|array',
+            'action_status' => 'nullable|in:lanjut_kerja,pulang,dirujuk,rawat_inap',
+        ]);
+
+        $visit->update([
+            'visit_date' => $validated['visit_date'],
+            'visit_time' => $validated['visit_time'],
+            'action_status' => $validated['action_status'] ?? null,
+        ]);
+
+        // Get diagnosis name if diagnosis_id is provided
+        $diagnosisText = null;
+        if (!empty($validated['diagnosis_id'])) {
+            $diagnosis = Diagnosis::find($validated['diagnosis_id']);
+            $diagnosisText = $diagnosis ? "{$diagnosis->icd10_code} - {$diagnosis->name_id}" : null;
+        }
+
+        // Update or create medical record
+        $visit->medicalRecord()->updateOrCreate(
+            ['visit_id' => $visit->id],
+            [
+                'subjective' => $validated['complaint'] ?? null,
+                'assessment' => $diagnosisText,
+                'plan' => $validated['plan'] ?? null,
+            ]
+        );
+
+        // Update vital signs
+        $visit->vitalSigns()->updateOrCreate(
+            ['visit_id' => $visit->id],
+            [
+                'blood_pressure_systolic' => $validated['bp_systolic'],
+                'blood_pressure_diastolic' => $validated['bp_diastolic'],
+                'pulse' => $validated['pulse'],
+                'respiratory_rate' => $validated['rr'],
+                'temperature' => $validated['temp'],
+                'spo2' => $validated['spo2'],
+            ]
+        );
+
+        // Update prescriptions - delete existing and recreate
+        $visit->prescriptions()->delete();
+        if (!empty($validated['medicines'])) {
+            foreach ($validated['medicines'] as $med) {
+                if (!empty($med['medicine_id'])) {
+                    Prescription::create([
+                        'visit_id' => $visit->id,
+                        'medicine_id' => $med['medicine_id'],
+                        'quantity' => $med['quantity'],
+                        'dosage' => $med['dosage'] ?? null,
+                        'frequency' => $med['frequency'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->route('kunjungan.berobat.rekam-medis', ['employee_id' => $visit->employee_id])
+            ->with('success', 'Kunjungan berhasil diperbarui');
     }
 }
