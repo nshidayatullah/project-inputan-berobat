@@ -1,6 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\PositionController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\VisitController;
+use App\Http\Controllers\MedicineController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -18,180 +24,85 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/master', function () {
-    return Inertia::render('Master/Index');
-})->middleware(['auth', 'verified'])->name('master.index');
+// Master Data Routes
+Route::middleware(['auth', 'verified'])->prefix('master')->name('master.')->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('Master/Index');
+    })->name('index');
 
-Route::get('/master/perusahaan', function () {
-    return Inertia::render('Master/Perusahaan/Index');
-})->middleware(['auth', 'verified'])->name('master.perusahaan.index');
+    // Perusahaan (Companies)
+    Route::get('/perusahaan', [CompanyController::class, 'index'])->name('perusahaan.index');
+    Route::post('/perusahaan', [CompanyController::class, 'store'])->name('perusahaan.store');
+    Route::put('/perusahaan/{company}', [CompanyController::class, 'update'])->name('perusahaan.update');
+    Route::delete('/perusahaan/{company}', [CompanyController::class, 'destroy'])->name('perusahaan.destroy');
 
-Route::get('/master/departemen', function () {
-    return Inertia::render('Master/Departemen/Index');
-})->middleware(['auth', 'verified'])->name('master.departemen.index');
+    // Departemen (Departments)
+    Route::get('/departemen', [DepartmentController::class, 'index'])->name('departemen.index');
+    Route::post('/departemen', [DepartmentController::class, 'store'])->name('departemen.store');
+    Route::put('/departemen/{department}', [DepartmentController::class, 'update'])->name('departemen.update');
+    Route::delete('/departemen/{department}', [DepartmentController::class, 'destroy'])->name('departemen.destroy');
 
-Route::get('/master/jabatan', function () {
-    return Inertia::render('Master/Jabatan/Index');
-})->middleware(['auth', 'verified'])->name('master.jabatan.index');
+    // Jabatan (Positions)
+    Route::get('/jabatan', [PositionController::class, 'index'])->name('jabatan.index');
+    Route::post('/jabatan', [PositionController::class, 'store'])->name('jabatan.store');
+    Route::put('/jabatan/{position}', [PositionController::class, 'update'])->name('jabatan.update');
+    Route::delete('/jabatan/{position}', [PositionController::class, 'destroy'])->name('jabatan.destroy');
 
-Route::get('/master/karyawan', function () {
-    return Inertia::render('Master/Karyawan/Index');
-})->middleware(['auth', 'verified'])->name('master.karyawan.index');
+    // Karyawan (Employees)
+    Route::get('/karyawan', [EmployeeController::class, 'index'])->name('karyawan.index');
+    Route::get('/karyawan/create', [EmployeeController::class, 'create'])->name('karyawan.create'); // New Route
+    Route::post('/karyawan', [EmployeeController::class, 'store'])->name('karyawan.store');
+    Route::get('/karyawan/{employee}/edit', [EmployeeController::class, 'edit'])->name('karyawan.edit'); // New Route
+    Route::put('/karyawan/{employee}', [EmployeeController::class, 'update'])->name('karyawan.update');
+    Route::delete('/karyawan/{employee}', [EmployeeController::class, 'destroy'])->name('karyawan.destroy');
 
-Route::get('/obat', function () {
-    return Inertia::render('Obat/Index');
-})->middleware(['auth', 'verified'])->name('obat.index');
+    // API for dropdowns
+    Route::get('/karyawan/departments/{company}', [EmployeeController::class, 'getDepartments'])->name('karyawan.departments');
+    Route::get('/karyawan/positions/{company}', [EmployeeController::class, 'getPositions'])->name('karyawan.positions');
 
-Route::get('/master/icd10', function () {
-    return Inertia::render('Master/ICD10/Index');
-})->middleware(['auth', 'verified'])->name('master.icd10.index');
+    // ICD10
+    Route::get('/icd10', function () {
+        return Inertia::render('Master/ICD10/Index');
+    })->name('icd10.index');
+});
 
-Route::get('/kunjungan/berobat', function () {
-    return Inertia::render('Kunjungan/Berobat/Index');
-})->middleware(['auth', 'verified'])->name('kunjungan.berobat.index');
+// Obat Routes
+Route::middleware(['auth', 'verified'])->prefix('obat')->name('obat.')->group(function () {
+    Route::get('/', function () {
+        $medicines = \App\Models\Medicine::orderBy('name')->get();
+        return Inertia::render('Obat/Index', ['medicines' => $medicines]);
+    })->name('index');
+});
 
-Route::get('/kunjungan/berobat/rekam-medis', function () {
-    $employee = request()->get('employee', 'Unknown');
+// Kunjungan Routes
+Route::middleware(['auth', 'verified'])->prefix('kunjungan')->name('kunjungan.')->group(function () {
+    // Berobat
+    Route::get('/berobat', [VisitController::class, 'index'])->name('berobat.index');
+    Route::post('/berobat', [VisitController::class, 'store'])->name('berobat.store');
+    Route::get('/berobat/rekam-medis', [VisitController::class, 'rekamMedis'])->name('berobat.rekam-medis');
 
-    // Dummy data - in production, fetch from database
-    $allHistory = [
-        [
-            'id' => 1,
-            'employee' => 'Budi Santoso',
-            'company' => 'PT Sejahtera Abadi',
-            'department' => 'IT',
-            'position' => 'Staff',
-            'age' => 30,
-            'medicines' => [
-                ['name' => 'Paracetamol', 'qty' => 2],
-                ['name' => 'Vitamin C', 'qty' => 1]
-            ],
-            'complaint' => 'Demam, Pusing, Batuk',
-            'diagnosis' => 'Febris + ISPA',
-            'workDay' => 'Senin',
-            'actionStatus' => 'Lanjut Kerja',
-            'bp' => '120/80',
-            'pulse' => 80,
-            'rr' => 20,
-            'temp' => 38.5,
-            'spo2' => 98,
-            'labTests' => [
-                ['type' => 'Gula Darah Sewaktu', 'result' => '110 mg/dL', 'normal' => true],
-            ],
-            'pic' => 'Dr. Setiawan',
-            'time' => '09:00',
-            'status' => 'Selesai',
-            'date' => '2023-10-25',
-        ],
-        [
-            'id' => 2,
-            'employee' => 'Siti Aminah',
-            'company' => 'CV Maju Jaya',
-            'department' => 'Finance',
-            'position' => 'SPV',
-            'age' => 28,
-            'medicines' => [
-                ['name' => 'Amoxicillin', 'qty' => 3],
-                ['name' => 'Antasida', 'qty' => 1]
-            ],
-            'complaint' => 'Sakit tenggorokan, Nyeri ulu hati',
-            'diagnosis' => 'Faringitis + Gastritis',
-            'workDay' => 'Selasa',
-            'actionStatus' => 'Pulang',
-            'bp' => '110/70',
-            'pulse' => 88,
-            'rr' => 18,
-            'temp' => 37.2,
-            'spo2' => 99,
-            'labTests' => [
-                ['type' => 'Hemoglobin', 'result' => '12.5 g/dL', 'normal' => true],
-                ['type' => 'Cholesterol', 'result' => '220 mg/dL', 'normal' => false]
-            ],
-            'pic' => 'Perawat Rina',
-            'time' => '10:30',
-            'status' => 'Selesai',
-            'date' => '2023-10-24',
-        ],
-        [
-            'id' => 4,
-            'employee' => 'Budi Santoso',
-            'company' => 'PT Sejahtera Abadi',
-            'department' => 'IT',
-            'position' => 'Staff',
-            'age' => 30,
-            'medicines' => [['name' => 'Ambroxol', 'qty' => 2]],
-            'complaint' => 'Batuk berdahak',
-            'diagnosis' => 'Bronkitis Akut',
-            'workDay' => 'Kamis',
-            'actionStatus' => 'Lanjut Kerja',
-            'bp' => '125/82',
-            'pulse' => 78,
-            'rr' => 19,
-            'temp' => 37.0,
-            'spo2' => 97,
-            'labTests' => [],
-            'pic' => 'Dr. Setiawan',
-            'time' => '08:30',
-            'status' => 'Selesai',
-            'date' => '2023-10-20',
-        ],
-        [
-            'id' => 5,
-            'employee' => 'Budi Santoso',
-            'company' => 'PT Sejahtera Abadi',
-            'department' => 'IT',
-            'position' => 'Staff',
-            'age' => 30,
-            'medicines' => [['name' => 'Cetirizine', 'qty' => 1]],
-            'complaint' => 'Gatal-gatal, Alergi',
-            'diagnosis' => 'Dermatitis Alergi',
-            'workDay' => 'Rabu',
-            'actionStatus' => 'Pulang',
-            'bp' => '118/78',
-            'pulse' => 76,
-            'rr' => 18,
-            'temp' => 36.6,
-            'spo2' => 99,
-            'labTests' => [
-                ['type' => 'Hemoglobin', 'result' => '14.5 g/dL', 'normal' => true]
-            ],
-            'pic' => 'Perawat Rina',
-            'time' => '11:00',
-            'status' => 'Selesai',
-            'date' => '2023-10-15',
-        ],
-    ];
+    // Follow-up MCU
+    Route::get('/follow-up-mcu', function () {
+        return Inertia::render('Kunjungan/FollowUpMCU/Index');
+    })->name('follow-up-mcu.index');
 
-    // Filter history for selected employee and sort by date (newest first)
-    $history = collect($allHistory)
-        ->filter(fn($record) => $record['employee'] === $employee)
-        ->sortByDesc('date')
-        ->values()
-        ->all();
+    // Prolanis
+    Route::get('/prolanis', function () {
+        return Inertia::render('Kunjungan/Prolanis/Index');
+    })->name('prolanis.index');
+});
 
-    return Inertia::render('Kunjungan/Berobat/RekamMedis', [
-        'employee' => $employee,
-        'history' => $history,
-    ]);
-})->middleware(['auth', 'verified'])->name('kunjungan.berobat.rekam-medis');
-
-
-Route::get('/kunjungan/follow-up-mcu', function () {
-    return Inertia::render('Kunjungan/FollowUpMCU/Index');
-})->middleware(['auth', 'verified'])->name('kunjungan.follow-up-mcu.index');
-
-Route::get('/kunjungan/prolanis', function () {
-    return Inertia::render('Kunjungan/Prolanis/Index');
-})->middleware(['auth', 'verified'])->name('kunjungan.prolanis.index');
-
+// Rekam Medis Routes
 Route::get('/rekam-medis', function () {
     return Inertia::render('RekamMedis/Index');
 })->middleware(['auth', 'verified'])->name('rekam-medis.index');
 
+// User Management Routes
 Route::get('/user-management', function () {
     return Inertia::render('UserManagement/Index');
 })->middleware(['auth', 'verified'])->name('user-management.index');
 
+// Profile Routes
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

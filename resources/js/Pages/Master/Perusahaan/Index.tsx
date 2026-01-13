@@ -1,5 +1,5 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import {
     Card,
     CardContent,
@@ -16,47 +16,34 @@ import {
     TableRow,
 } from "@/Components/ui/table";
 import { Button } from "@/Components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/Components/ui/badge";
+import { Pencil, Trash2, Plus, Building2, Users } from "lucide-react";
 
-export default function PerusahaanIndex() {
-    // Dummy data for example
-    const companies = [
-        {
-            id: 1,
-            kustodian: "Kustodian A",
-            name: "PT Sejahtera Abadi",
-            code: "SA001",
-            pic: "Budi Santoso",
-        },
-        {
-            id: 2,
-            kustodian: "Kustodian B",
-            name: "CV Maju Jaya",
-            code: "MJ002",
-            pic: "Siti Aminah",
-        },
-        {
-            id: 3,
-            kustodian: "Kustodian A",
-            name: "PT Teknologi Digital",
-            code: "TD003",
-            pic: "Rahmad Hidayat",
-        },
-        {
-            id: 4,
-            kustodian: "Kustodian C",
-            name: "UD Sumber Makmur",
-            code: "SM004",
-            pic: "Dewi Lestari",
-        },
-        {
-            id: 5,
-            kustodian: "Kustodian B",
-            name: "PT Bangun Negeri",
-            code: "BN005",
-            pic: "Eko Prasetyo",
-        },
-    ];
+interface Company {
+    id: number;
+    code: string;
+    name: string;
+    type: string;
+    type_label: string;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    pic_name: string | null;
+    is_active: boolean;
+    employees_count: number;
+}
+
+interface Props {
+    companies: Company[];
+    kustodians: { id: number; name: string; company_name: string }[];
+}
+
+export default function PerusahaanIndex({
+    companies = [],
+    kustodians = [],
+}: Props) {
+    const mainContractor = companies.find((c) => c.type === "main_contractor");
+    const subContractors = companies.filter((c) => c.type === "sub_contractor");
 
     return (
         <AuthenticatedLayout
@@ -69,16 +56,92 @@ export default function PerusahaanIndex() {
             <Head title="Data Perusahaan" />
 
             <div className="py-6">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                    {/* Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Total Perusahaan
+                                        </p>
+                                        <p className="text-2xl font-bold">
+                                            {companies.length}
+                                        </p>
+                                    </div>
+                                    <Building2 className="h-8 w-8 text-blue-500" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Sub Contractor
+                                        </p>
+                                        <p className="text-2xl font-bold">
+                                            {subContractors.length}
+                                        </p>
+                                    </div>
+                                    <Building2 className="h-8 w-8 text-green-500" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Total Karyawan
+                                        </p>
+                                        <p className="text-2xl font-bold">
+                                            {companies.reduce(
+                                                (sum, c) =>
+                                                    sum + c.employees_count,
+                                                0
+                                            )}
+                                        </p>
+                                    </div>
+                                    <Users className="h-8 w-8 text-purple-500" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Main Contractor */}
+                    {mainContractor && (
+                        <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                            <CardHeader>
+                                <div className="flex items-center gap-2">
+                                    <Badge className="bg-blue-500">
+                                        Main Contractor
+                                    </Badge>
+                                    <CardTitle>{mainContractor.name}</CardTitle>
+                                </div>
+                                <CardDescription>
+                                    Kode: {mainContractor.code} • PIC:{" "}
+                                    {mainContractor.pic_name || "-"} • Karyawan:{" "}
+                                    {mainContractor.employees_count}
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+
+                    {/* Sub Contractors */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle>Daftar Perusahaan</CardTitle>
+                                <CardTitle>Daftar Sub Contractor</CardTitle>
                                 <CardDescription>
-                                    Kelola data perusahaan yang terdaftar.
+                                    Kelola data perusahaan sub contractor.
                                 </CardDescription>
                             </div>
-                            <Button>Tambah Perusahaan</Button>
+                            <Button>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tambah Perusahaan
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -87,57 +150,80 @@ export default function PerusahaanIndex() {
                                         <TableHead className="w-[50px]">
                                             No.
                                         </TableHead>
-                                        <TableHead>Kustodian</TableHead>
+                                        <TableHead>Kode</TableHead>
                                         <TableHead>Nama Perusahaan</TableHead>
-                                        <TableHead>Kode Perusahaan</TableHead>
                                         <TableHead>PIC</TableHead>
+                                        <TableHead>Karyawan</TableHead>
+                                        <TableHead>Status</TableHead>
                                         <TableHead className="text-right">
-                                            Action
+                                            Aksi
                                         </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {companies.map((company, index) => (
-                                        <TableRow key={company.id}>
-                                            <TableCell className="font-medium">
-                                                {index + 1}
-                                            </TableCell>
-                                            <TableCell>
-                                                {company.kustodian}
-                                            </TableCell>
-                                            <TableCell>
-                                                {company.name}
-                                            </TableCell>
-                                            <TableCell>
-                                                {company.code}
-                                            </TableCell>
-                                            <TableCell>{company.pic}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Edit
-                                                        </span>
-                                                    </Button>
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                        <span className="sr-only">
-                                                            Delete
-                                                        </span>
-                                                    </Button>
-                                                </div>
+                                    {subContractors.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={7}
+                                                className="text-center py-8 text-muted-foreground"
+                                            >
+                                                Belum ada data sub contractor
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        subContractors.map((company, index) => (
+                                            <TableRow key={company.id}>
+                                                <TableCell>
+                                                    {index + 1}
+                                                </TableCell>
+                                                <TableCell className="font-mono">
+                                                    {company.code}
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {company.name}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {company.pic_name || "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary">
+                                                        {
+                                                            company.employees_count
+                                                        }{" "}
+                                                        orang
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {company.is_active ? (
+                                                        <Badge className="bg-green-500">
+                                                            Aktif
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="secondary">
+                                                            Nonaktif
+                                                        </Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
